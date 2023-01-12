@@ -17,13 +17,18 @@ float LM75_Temperature(void);
 extern float threshold=0;
 extern int pressed=0;
 uint8_t data;
+extern float setpoint=22;
+int x=0;
 
 void GPIO_Config();
 void I2C_Config();
 void TIM3_Config();
+void PWM_Config();
 void UART1_config();
 void ADC1_Config();
 void NVIC_Config();
+void PWM_Config();
+void EXTI_Config();
 	
 void delay(uint32_t time)
 {
@@ -39,18 +44,30 @@ void USART1_IRQHandler(void)
     {
 				data = USART_ReceiveData(USART1); // Get 8-bit data
 				temperature=LM75_Temperature();
-				if ((data == '1')&& (temperature>threshold)) GPIO_SetBits(GPIOA,GPIO_Pin_0);
-				else if ((data == '0') && (temperature<threshold)) GPIO_ResetBits(GPIOA,GPIO_Pin_0);
 		  	USART_ClearITPendingBit(USART1, USART_IT_RXNE); // Clear interrupt flag
     }
 }
 
-void EXTI1_IRQHandler(void)
+void EXTI15_10_IRQHandler(void)
 {
-if(EXTI_GetITStatus(EXTI_Line1) != RESET){
-threshold=((int)ADC_GetConversionValue(ADC1))*50/4069; //50 IS THE MAX DEGREE
+if(EXTI_GetITStatus(EXTI_Line13) != RESET){
+	TIM_OCInitStructure.TIM_Pulse = 300;
+	TIM_OC1Init(TIM2, &TIM_OCInitStructure);
+	
+	TIM_OCInitStructure.TIM_Pulse = 0;
+	TIM_OC2Init(TIM2, &TIM_OCInitStructure);
+	delay(10);
+	EXTI_ClearITPendingBit(EXTI_Line13);
 }
-EXTI_ClearITPendingBit(EXTI_Line1);
+if(EXTI_GetITStatus(EXTI_Line12) != RESET){
+	TIM_OCInitStructure.TIM_Pulse = 300;
+	TIM_OC2Init(TIM2, &TIM_OCInitStructure);
+	
+	TIM_OCInitStructure.TIM_Pulse = 0;
+	TIM_OC1Init(TIM2, &TIM_OCInitStructure);
+	delay(10);
+	EXTI_ClearITPendingBit(EXTI_Line12);
+}
 }
 
 void TIM3_IRQHandler(void)
@@ -71,25 +88,14 @@ void TIM3_IRQHandler(void)
 }
 
 int main(void){
-	 GPIO_Config();
 	 I2C_Config();
-	 TIM3_Config();
 	 UART1_config();
-	 ADC1_Config();
+	 GPIO_Config();
+	 TIM3_Config();
+	 PWM_Config();
+	 EXTI_Config();
 	 NVIC_Config();
-	 GPIO_ResetBits(GPIOA,GPIO_Pin_0);
-		/* Configure the EXTI interrupt */
-		EXTI_InitStructure.EXTI_Line =EXTI_Line1;
-		EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-		EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
-		EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-		EXTI_Init(&EXTI_InitStructure);
-
-		NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn;
-		NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x02;
-		NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x00;
-		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-		NVIC_Init(&NVIC_InitStructure);
+	 
 	while (1){
 }
 }
@@ -139,16 +145,27 @@ float LM75_Temperature(void){
 	
 	void GPIO_Config(){
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO, ENABLE);
-	// LED Pin
+	//PWM 1
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	// Button 1 config
+	//PWM 2
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
+		
+	// Button Increase
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+	
+	// Button Decrease
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
 	
 	//I2C Config
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
@@ -165,14 +182,7 @@ float LM75_Temperature(void){
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF_PP;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-	// Configure input PA4 (Analog Input) for potentiometer
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
 	
-	GPIO_EXTILineConfig(GPIO_PortSourceGPIOA, GPIO_PinSource1);
-	EXTI_DeInit();
 	}
 	
 	void I2C_Config(){
@@ -190,10 +200,18 @@ float LM75_Temperature(void){
 	}
 	
   void TIM3_Config(){
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM2, ENABLE);
 	
-	//TIM Config
-	TIM_TimeBaseStructure.TIM_Period = 35999;		
+	//TIM2 Config 1kHz
+	TIM_TimeBaseStructure.TIM_Period = 359;		
+	TIM_TimeBaseStructure.TIM_Prescaler = 199;
+	TIM_TimeBaseStructure.TIM_ClockDivision = 0;
+	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
+	TIM_Cmd(TIM2, ENABLE);
+		
+	//TIM3 Config f=10Hz T=0.1 s
+	TIM_TimeBaseStructure.TIM_Period = 3599;		
 	TIM_TimeBaseStructure.TIM_Prescaler = 1999;
 	TIM_TimeBaseStructure.TIM_ClockDivision = 0;
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
@@ -220,34 +238,6 @@ float LM75_Temperature(void){
 //	USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
 	USART_Cmd(USART1, ENABLE);
 }
-	
-  void ADC1_Config(){
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
-	// Set ADC clock (Maximum 14 MHz | 72/6 = 12 MHz)
-	RCC_ADCCLKConfig(RCC_PCLK2_Div6);
-	
-	//ADC Settings
-	ADC_InitStructure.ADC_Mode = ADC_Mode_Independent;
-	ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
-	// Enable/disable external conversion trigger (EXTI | TIM | etc.)
-	ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_None;
-	// Configure data alignment (Right | Left)
-	ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
-	// Set the number of channels to be used and initialize ADC
-	ADC_InitStructure.ADC_NbrOfChannel = 1;
-	ADC_InitStructure.ADC_ScanConvMode=DISABLE;
-	ADC_Init(ADC1, &ADC_InitStructure);
-
-	ADC_RegularChannelConfig(ADC1, ADC_Channel_4, 1, ADC_SampleTime_7Cycles5);
-	ADC_Cmd(ADC1, ENABLE);
-
-	ADC_ResetCalibration(ADC1);
-	while (ADC_GetResetCalibrationStatus(ADC1));
-	ADC_StartCalibration(ADC1);
-	while (ADC_GetCalibrationStatus(ADC1));
-	// Start the conversion
-	ADC_SoftwareStartConvCmd(ADC1, ENABLE);
-}
 
   void NVIC_Config(){
 	NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
@@ -262,5 +252,51 @@ float LM75_Temperature(void){
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
+}
+	
+	void PWM_Config(){
+	//PWM TIM2C1
+	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+	TIM_OCInitStructure.TIM_Pulse = 0;
+	TIM_OC1Init(TIM2, &TIM_OCInitStructure);
+		
+	//PWM TIM2C2
+	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+	TIM_OCInitStructure.TIM_Pulse = 0;
+	TIM_OC2Init(TIM2, &TIM_OCInitStructure);
+	}
+	
+	void EXTI_Config(void)
+{
+	// Configuring external interrupt
+	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource13);
+	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource12);
+	
+	//Button interupt
+	EXTI_DeInit();
+	EXTI_InitStructure.EXTI_Line = EXTI_Line13;
+	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+	EXTI_Init(&EXTI_InitStructure);	
+
+	//Button interupt
+	EXTI_InitStructure.EXTI_Line = EXTI_Line12;
+	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+	EXTI_Init(&EXTI_InitStructure);	
+	
+	//Button interupt NVIC
+	NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
+		
 	
 }

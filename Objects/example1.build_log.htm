@@ -28,25 +28,31 @@ Project File Date:  12/14/2022
 *** Using Compiler 'V5.06 update 7 (build 960)', folder: 'C:\Keil_v5\ARM\ARMCC\Bin'
 Build target 'Target 1'
 compiling main.c...
-main.c(21): warning:  #1295-D: Deprecated declaration GPIO_Config - give arg types
+main.c(23): warning:  #1295-D: Deprecated declaration GPIO_Config - give arg types
   void GPIO_Config();
-main.c(22): warning:  #1295-D: Deprecated declaration I2C_Config - give arg types
+main.c(24): warning:  #1295-D: Deprecated declaration I2C_Config - give arg types
   void I2C_Config();
-main.c(23): warning:  #1295-D: Deprecated declaration TIM3_Config - give arg types
+main.c(25): warning:  #1295-D: Deprecated declaration TIM3_Config - give arg types
   void TIM3_Config();
-main.c(24): warning:  #1295-D: Deprecated declaration UART1_config - give arg types
+main.c(26): warning:  #1295-D: Deprecated declaration PWM_Config - give arg types
+  void PWM_Config();
+main.c(27): warning:  #1295-D: Deprecated declaration UART1_config - give arg types
   void UART1_config();
-main.c(25): warning:  #1295-D: Deprecated declaration ADC1_Config - give arg types
+main.c(28): warning:  #1295-D: Deprecated declaration ADC1_Config - give arg types
   void ADC1_Config();
-main.c(26): warning:  #1295-D: Deprecated declaration NVIC_Config - give arg types
+main.c(29): warning:  #1295-D: Deprecated declaration NVIC_Config - give arg types
   void NVIC_Config();
-main.c(266): warning:  #1-D: last line of file ends without a newline
+main.c(30): warning:  #1295-D: Deprecated declaration PWM_Config - give arg types
+  void PWM_Config();
+main.c(31): warning:  #1295-D: Deprecated declaration EXTI_Config - give arg types
+  void EXTI_Config();
+main.c(302): warning:  #1-D: last line of file ends without a newline
   }
-main.c: 7 warnings, 0 errors
+main.c: 10 warnings, 0 errors
 linking...
-Program Size: Code=9632 RO-data=444 RW-data=52 ZI-data=1716  
+Program Size: Code=9272 RO-data=444 RW-data=60 ZI-data=1716  
 FromELF: creating hex file...
-".\Objects\example1.axf" - 0 Error(s), 7 Warning(s).
+".\Objects\example1.axf" - 0 Error(s), 10 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -59,7 +65,7 @@ Package Vendor: Keil
   C:\Users\Yusuf\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.4.0\Device\Include
 
 <h2>Collection of Component Files used:</h2>
-Build Time Elapsed:  00:00:01
+Build Time Elapsed:  00:00:00
 </pre>
 </body>
 </html>
