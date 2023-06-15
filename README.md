@@ -35,7 +35,6 @@ UART Connections->A9-A10
 
 I2C Connections-> B6-B7
 
-![image](https://github.com/yerenkl/STM32_THERMISTOR/assets/61627684/bb4f4142-7e4e-41ae-aba1-65383a244306)
+![image](https://github.com/yerenkl/STM32_THERMISTOR/assets/61627684/73a5440b-cdbb-48d9-a211-50756cdfe4a7)
 
-![image](https://github.com/yerenkl/STM32_THERMISTOR/assets/61627684/4a829f4e-2a95-4b6b-b432-88bec568869f)
 
