@@ -37,4 +37,5 @@ I2C Connections-> B6-B7
 
 ![image](https://github.com/yerenkl/STM32_THERMISTOR/assets/61627684/73a5440b-cdbb-48d9-a211-50756cdfe4a7)
 
+![image](https://github.com/yerenkl/STM32_THERMISTOR/assets/61627684/d04ec2a9-d695-4d35-9b0c-dfc4b10e340f)
 
